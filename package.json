@@ -1,0 +1,20 @@
+{
+  "name": "sproutelle-api",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --minify",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+  },
+  "dependencies": {
+    "hono": "^4.13.16",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261121.1",
+    "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.110.0"
+  }
+}
