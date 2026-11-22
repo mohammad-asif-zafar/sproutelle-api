@@ -95,6 +95,7 @@ export async function verifyNeonJWT(c: Context<AppEnv>): Promise<UserSession> {
 
     const { payload } = await jwtVerify(token, JWKS, {
       issuer: expectedIssuers,
+      audience: 'authenticated',
       clockTolerance: 10, // 10s clock skew tolerance
     });
 
@@ -123,7 +124,8 @@ export async function verifyNeonJWT(c: Context<AppEnv>): Promise<UserSession> {
       err instanceof joseErrors.JWKSNoMatchingKey ||
       err?.code === 'ERR_JWKS_FETCH_FAILED' ||
       err?.name === 'JWKSFetchError' ||
-      err?.message?.includes('fetch failed')
+      err?.message?.includes('fetch failed') ||
+      err?.message?.includes('JSON Web Key Set')
     ) {
       console.error('JWKS remote endpoint fetch failure:', err?.message || err);
       throw new AuthVerificationError('Authentication service key lookup failed', 'SERVICE_UNAVAILABLE', 503);

@@ -37,6 +37,7 @@ describe('Media Assets Studio API Unit Tests (Cloudflare R2 + Neon)', () => {
     })
       .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
       .setIssuer(mockIssuer)
+      .setAudience('authenticated')
       .setIssuedAt()
       .setExpirationTime('1h')
       .sign(privateKey);

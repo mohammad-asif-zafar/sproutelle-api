@@ -24,6 +24,7 @@ describe('Neon Managed Auth JWT Issuer Verification Unit Tests', () => {
     const builder = new SignJWT({ ...payload })
       .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
       .setIssuer(options.issuer ?? mockBaseUrl)
+      .setAudience('authenticated')
       .setIssuedAt();
 
     if (options.exp) builder.setExpirationTime(options.exp);

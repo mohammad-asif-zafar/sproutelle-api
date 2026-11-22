@@ -42,12 +42,12 @@ describe('Sproutelle API Security & Route Integration Tests', () => {
     expect(body.error.code).toBe('UNAUTHORIZED');
   });
 
-  it('GET /api/auth/get-session should return 401 UNAAUTHENTICATED when unauthenticated', async () => {
+  it('GET /api/auth/get-session should return 401 UNAUTHORIZED when unauthenticated', async () => {
     const res = await app.request('/api/auth/get-session', {}, envDev);
     expect(res.status).toBe(401);
     const body = (await res.json()) as any;
     expect(body.success).toBe(false);
-    expect(body.error.code).toBe('UNAUTHENTICATED');
+    expect(body.error.code).toBe('UNAUTHORIZED');
   });
 
   it('CORS preflight OPTIONS request should set Access-Control-Allow-Credentials: true for allowed origin', async () => {

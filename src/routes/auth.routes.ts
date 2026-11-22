@@ -14,12 +14,13 @@ authRouter.get('/get-session', async (c) => {
   } catch (authErr: any) {
     const status = authErr instanceof AuthVerificationError ? authErr.status : 401;
     const msg = authErr instanceof AuthVerificationError ? authErr.message : 'Invalid or expired authentication token';
+    const code = authErr instanceof AuthVerificationError ? authErr.code : 'UNAUTHENTICATED';
 
     return c.json({
       success: false,
       error: {
         message: msg,
-        code: 'UNAUTHENTICATED'
+        code: code
       }
     }, status as any);
   }
@@ -39,7 +40,16 @@ authRouter.get('/get-session', async (c) => {
     isAdmin = false; // Fail closed on database failure
   } finally {
     if (dbClient) {
-      c.executionCtx.waitUntil(dbClient.end());
+      try {
+        const ctx = (c as any).executionCtx;
+        if (ctx && typeof ctx.waitUntil === 'function') {
+          ctx.waitUntil(dbClient.end());
+        } else {
+          dbClient.end().catch(() => {});
+        }
+      } catch {
+        dbClient.end().catch(() => {});
+      }
     }
   }
 
