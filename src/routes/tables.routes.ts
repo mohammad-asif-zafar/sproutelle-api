@@ -14,6 +14,7 @@ const tablesRouter = new Hono<AppEnv>();
 
 tablesRouter.use('*', requireAdmin);
 
+// Explicit allowlist of tables permitted for Raw Database Explorer
 const ALLOWED_TABLES = new Set([
   'game_categories',
   'games',
@@ -21,11 +22,12 @@ const ALLOWED_TABLES = new Set([
   'questions',
   'question_options',
   'media_assets',
+  'activity_media',
+  'game_versions',
   'homescreen_explorer',
   'homescreen_explorer_subcategories',
   'subcategory_games',
   'game_releases',
-  'admin_users',
 ]);
 
 function validateTableName(table: string): boolean {
