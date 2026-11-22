@@ -7,6 +7,7 @@ import adminRouter from './routes/admin.routes';
 import mediaRouter from './routes/media.routes';
 import explorerRouter from './routes/explorer.routes';
 import questionRouter from './routes/question.routes';
+import tablesRouter from './routes/tables.routes';
 import pocAuthRouter from './routes/auth.poc.routes';
 
 const app = new Hono<AppEnv>();
@@ -17,6 +18,7 @@ app.use('*', corsMiddleware);
 // Routes (Specific subpaths mounted before parent /api/admin)
 app.route('/api/health', healthRouter);
 app.route('/api/auth', authRouter);
+app.route('/api/admin/tables', tablesRouter);
 app.route('/api/admin/media', mediaRouter);
 app.route('/api/admin/explorers', explorerRouter);
 app.route('/api/admin/games', questionRouter);

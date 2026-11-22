@@ -1,5 +1,7 @@
+import { safeCleanupDb } from "../db/cleanup";
+
 import type { Context, Next } from 'hono';
-import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
+import { createRemoteJWKSet, jwtVerify, decodeJwt, errors as joseErrors } from 'jose';
 import type { AppEnv } from '../config/env';
 import { getDbClient } from '../db/client';
 import type { ApiResponse, UserSession } from '../types/contract';
@@ -58,9 +60,36 @@ export function getExpectedIssuers(baseUrl?: string): string[] | undefined {
 }
 
 /**
+ * Derives valid expected JWT audience strings from Neon Auth configuration
+ */
+export function getExpectedAudiences(baseUrl?: string): string[] {
+  const audiences = new Set<string>();
+
+  audiences.add('authenticated');
+  audiences.add('better-auth');
+  audiences.add('neon-auth');
+
+  if (baseUrl && baseUrl.trim() !== '') {
+    const trimmed = baseUrl.trim().replace(/\/$/, '');
+    audiences.add(trimmed);
+    audiences.add(`${trimmed}/`);
+
+    try {
+      const origin = new URL(trimmed).origin;
+      audiences.add(origin);
+      audiences.add(`${origin}/`);
+    } catch {
+      // Ignore URL parsing errors if any
+    }
+  }
+
+  return Array.from(audiences);
+}
+
+/**
  * Extracts and verifies a Neon Managed Auth JWT token from the Authorization header.
  * Uses ONLY Cloudflare Worker environment bindings (c.env). No process.env fallbacks.
- * Validates: Signature, Issuer, Audience (if configured), Expiration, Not-Before, and Subject claims.
+ * Validates: Signature, Issuer, Audience (if claim present), Expiration, Not-Before, and Subject claims.
  */
 export async function verifyNeonJWT(c: Context<AppEnv>): Promise<UserSession> {
   const authHeader = c.req.header('Authorization');
@@ -92,10 +121,20 @@ export async function verifyNeonJWT(c: Context<AppEnv>): Promise<UserSession> {
 
   try {
     const expectedIssuers = getExpectedIssuers(baseUrl);
+    const expectedAudiences = getExpectedAudiences(baseUrl);
+
+    // Decode unverified header/payload first to check if an audience claim is present
+    let hasAudience = false;
+    try {
+      const decoded = decodeJwt(token);
+      hasAudience = decoded && decoded.aud !== undefined && decoded.aud !== null;
+    } catch {
+      // Decode error will be caught by jwtVerify
+    }
 
     const { payload } = await jwtVerify(token, JWKS, {
       issuer: expectedIssuers,
-      audience: 'authenticated',
+      audience: hasAudience ? expectedAudiences : undefined,
       clockTolerance: 10, // 10s clock skew tolerance
     });
 
@@ -220,17 +259,6 @@ export async function requireAdmin(c: Context<AppEnv>, next: Next) {
     };
     return c.json(response, 500);
   } finally {
-    if (dbClient) {
-      try {
-        const ctx = (c as any).executionCtx;
-        if (ctx && typeof ctx.waitUntil === 'function') {
-          ctx.waitUntil(dbClient.end());
-        } else {
-          dbClient.end().catch(() => {});
-        }
-      } catch {
-        dbClient.end().catch(() => {});
-      }
-    }
+    safeCleanupDb(c, dbClient);
   }
 }

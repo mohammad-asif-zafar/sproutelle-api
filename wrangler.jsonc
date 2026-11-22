@@ -22,5 +22,23 @@
       "binding": "HYPERDRIVE",
       "id": "eebc9a577cec42c7895c8a736b948f43"
     }
-  ]
+  ],
+  "env": {
+    "production": {
+      "vars": {
+        "ENVIRONMENT": "production",
+        "ALLOWED_ORIGINS": "https://mohammad-asif-zafar.github.io,https://admin.sproutelle.com",
+        "PUBLIC_MEDIA_URL": "https://api.sproutelle.com/api/media/file",
+        "MEDIA_BUCKET_NAME": "sproutelle-media-prod",
+        "NEON_AUTH_BASE_URL": "https://ep-lucky-lake-a1791kzv.neonauth.ap-southeast-1.aws.neon.tech/neondb/auth",
+        "NEON_AUTH_JWKS_URL": "https://ep-lucky-lake-a1791kzv.neonauth.ap-southeast-1.aws.neon.tech/neondb/auth/.well-known/jwks.json"
+      },
+      "r2_buckets": [
+        {
+          "binding": "MEDIA_BUCKET",
+          "bucket_name": "sproutelle-media-prod"
+        }
+      ]
+    }
+  }
 }

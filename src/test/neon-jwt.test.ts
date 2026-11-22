@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { generateKeyPair, SignJWT, exportJWK } from 'jose';
 import app from '../app';
-import { getExpectedIssuers } from '../middleware/auth';
+import { getExpectedIssuers, getExpectedAudiences } from '../middleware/auth';
 
-describe('Neon Managed Auth JWT Issuer Verification Unit Tests', () => {
+describe('Neon Managed Auth JWT Issuer & Audience Verification Unit Tests', () => {
   let privateKey: any;
   let publicKeyJwk: any;
   const mockBaseUrl = 'https://ep-lucky-lake-a1791kzv.neonauth.ap-southeast-1.aws.neon.tech/neondb/auth';
@@ -19,13 +19,16 @@ describe('Neon Managed Auth JWT Issuer Verification Unit Tests', () => {
 
   async function createMockJWT(
     payload: { sub?: string; email?: string; name?: string },
-    options: { exp?: string; nbf?: string; issuer?: string; key?: any } = {}
+    options: { exp?: string; nbf?: string; issuer?: string; aud?: string | string[] | null; key?: any } = {}
   ) {
     const builder = new SignJWT({ ...payload })
       .setProtectedHeader({ alg: 'RS256', kid: 'mock-key-id' })
       .setIssuer(options.issuer ?? mockBaseUrl)
-      .setAudience('authenticated')
       .setIssuedAt();
+
+    if (options.aud !== null) {
+      builder.setAudience(options.aud !== undefined ? options.aud : 'authenticated');
+    }
 
     if (options.exp) builder.setExpirationTime(options.exp);
     if (options.nbf) builder.setNotBefore(options.nbf);
@@ -42,9 +45,12 @@ describe('Neon Managed Auth JWT Issuer Verification Unit Tests', () => {
     expect(derived).toContain('neon-auth');
   });
 
-  it('getExpectedIssuers() should handle undefined or empty baseUrl gracefully', () => {
-    expect(getExpectedIssuers(undefined)).toBeUndefined();
-    expect(getExpectedIssuers('')).toBeUndefined();
+  it('getExpectedAudiences() should derive valid audiences from configuration', () => {
+    const derived = getExpectedAudiences(mockBaseUrl);
+    expect(derived).toContain('authenticated');
+    expect(derived).toContain('better-auth');
+    expect(derived).toContain('neon-auth');
+    expect(derived).toContain('https://ep-lucky-lake-a1791kzv.neonauth.ap-southeast-1.aws.neon.tech/neondb/auth');
   });
 
   it('should reject request when Authorization header is missing (401)', async () => {

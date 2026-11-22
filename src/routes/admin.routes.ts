@@ -1,3 +1,5 @@
+import { safeCleanupDb } from "../db/cleanup";
+
 import { Hono } from 'hono';
 import type { AppEnv } from '../config/env';
 import { requireAdmin } from '../middleware/auth';
@@ -68,9 +70,7 @@ adminRouter.get('/dashboard/metrics', async (c) => {
     };
     return c.json(errorResponse, 500);
   } finally {
-    if (dbClient) {
-      c.executionCtx.waitUntil(dbClient.end());
-    }
+    safeCleanupDb(c, dbClient);
   }
 });
 

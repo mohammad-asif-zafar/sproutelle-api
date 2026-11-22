@@ -1,3 +1,5 @@
+import { safeCleanupDb } from "../db/cleanup";
+
 import { Hono } from 'hono';
 import type { AppEnv } from '../config/env';
 import { verifyNeonJWT, AuthVerificationError } from '../middleware/auth';
@@ -39,18 +41,7 @@ authRouter.get('/get-session', async (c) => {
     console.error('Database query failure during admin_users status lookup:', dbErr);
     isAdmin = false; // Fail closed on database failure
   } finally {
-    if (dbClient) {
-      try {
-        const ctx = (c as any).executionCtx;
-        if (ctx && typeof ctx.waitUntil === 'function') {
-          ctx.waitUntil(dbClient.end());
-        } else {
-          dbClient.end().catch(() => {});
-        }
-      } catch {
-        dbClient.end().catch(() => {});
-      }
-    }
+    safeCleanupDb(c, dbClient);
   }
 
   userSession.isAdmin = isAdmin;
